@@ -1,0 +1,1242 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Foodie - Cooking & Food Ordering Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: food-items
+    description: Food item operations
+  - name: orders
+    description: Order operations
+  - name: wishlist
+    description: Wishlist operations
+  - name: shorts
+    description: Cooking shorts operations
+  - name: ideas
+    description: Cooking ideas operations
+  - name: reviews
+    description: Review operations
+  - name: stats
+    description: Stats and analytics
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /food-items:
+    get:
+      operationId: listFoodItems
+      tags: [food-items]
+      summary: List all food items
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter by category
+        - in: query
+          name: cafeId
+          schema:
+            type: integer
+          description: Filter by cafe
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name
+      responses:
+        "200":
+          description: List of food items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodItem"
+    post:
+      operationId: createFoodItem
+      tags: [food-items]
+      summary: Create a food item (cafe only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodItemBody"
+      responses:
+        "201":
+          description: Food item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden - cafe account required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /food-items/trending:
+    get:
+      operationId: getTrendingFoodItems
+      tags: [food-items]
+      summary: Get trending food items
+      responses:
+        "200":
+          description: Trending food items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodItem"
+
+  /food-items/{id}:
+    get:
+      operationId: getFoodItem
+      tags: [food-items]
+      summary: Get a food item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Food item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateFoodItem
+      tags: [food-items]
+      summary: Update a food item (cafe only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFoodItemBody"
+      responses:
+        "200":
+          description: Updated food item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodItem"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteFoodItem
+      tags: [food-items]
+      summary: Delete a food item (cafe only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List current user's orders
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderBody"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/all:
+    get:
+      operationId: listAllOrders
+      tags: [orders]
+      summary: List all orders (cafe view)
+      responses:
+        "200":
+          description: List of all orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get an order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Update order status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderStatusBody"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wishlist:
+    get:
+      operationId: getWishlist
+      tags: [wishlist]
+      summary: Get current user's wishlist
+      responses:
+        "200":
+          description: Wishlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WishlistItem"
+    post:
+      operationId: addToWishlist
+      tags: [wishlist]
+      summary: Add item to wishlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddToWishlistBody"
+      responses:
+        "201":
+          description: Added to wishlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistItem"
+        "409":
+          description: Already in wishlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wishlist/{id}:
+    delete:
+      operationId: removeFromWishlist
+      tags: [wishlist]
+      summary: Remove item from wishlist
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shorts:
+    get:
+      operationId: listShorts
+      tags: [shorts]
+      summary: List cooking shorts
+      responses:
+        "200":
+          description: List of cooking shorts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Short"
+    post:
+      operationId: createShort
+      tags: [shorts]
+      summary: Create a cooking short (cafe only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShortBody"
+      responses:
+        "201":
+          description: Short created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Short"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shorts/{id}:
+    get:
+      operationId: getShort
+      tags: [shorts]
+      summary: Get a cooking short
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Short
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Short"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteShort
+      tags: [shorts]
+      summary: Delete a cooking short
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Short deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shorts/{id}/like:
+    patch:
+      operationId: likeShort
+      tags: [shorts]
+      summary: Like a cooking short
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Short liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Short"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ideas:
+    get:
+      operationId: listIdeas
+      tags: [ideas]
+      summary: List cooking ideas
+      responses:
+        "200":
+          description: List of cooking ideas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CookingIdea"
+    post:
+      operationId: createIdea
+      tags: [ideas]
+      summary: Create a cooking idea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIdeaBody"
+      responses:
+        "201":
+          description: Idea created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookingIdea"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ideas/{id}:
+    get:
+      operationId: getIdea
+      tags: [ideas]
+      summary: Get a cooking idea
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cooking idea
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookingIdea"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteIdea
+      tags: [ideas]
+      summary: Delete a cooking idea
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ideas/{id}/like:
+    patch:
+      operationId: likeIdea
+      tags: [ideas]
+      summary: Like a cooking idea
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Idea liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookingIdea"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ideas/{id}/reviews:
+    get:
+      operationId: listIdeaReviews
+      tags: [reviews]
+      summary: List reviews for a cooking idea
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+    post:
+      operationId: createIdeaReview
+      tags: [reviews]
+      summary: Post a review on a cooking idea
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewBody"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stats/overview:
+    get:
+      operationId: getStatsOverview
+      tags: [stats]
+      summary: Get platform stats overview
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsOverview"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [user, cafe]
+        avatarUrl:
+          type: string
+          format: uri
+        avatarUrl:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+        - avatarUrl
+        - bio
+        - createdAt
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [user, cafe]
+      required:
+        - name
+        - email
+        - password
+        - role
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    FoodItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        imageUrl:
+          type: ["string", "null"]
+        category:
+          type: string
+        cafeId:
+          type: integer
+        cafeName:
+          type: ["string", "null"]
+        available:
+          type: boolean
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - description
+        - price
+        - imageUrl
+        - category
+        - cafeId
+        - cafeName
+        - available
+        - rating
+        - reviewCount
+        - createdAt
+
+    CreateFoodItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        imageUrl:
+          type: string
+        category:
+          type: string
+        available:
+          type: boolean
+      required:
+        - name
+        - description
+        - price
+        - category
+
+    UpdateFoodItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        imageUrl:
+          type: string
+        category:
+          type: string
+        available:
+          type: boolean
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        foodItemId:
+          type: integer
+        foodItemName:
+          type: string
+        foodItemImageUrl:
+          type: ["string", "null"]
+        quantity:
+          type: integer
+        price:
+          type: number
+      required:
+        - id
+        - foodItemId
+        - foodItemName
+        - foodItemImageUrl
+        - quantity
+        - price
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, confirmed, preparing, ready, delivered, cancelled]
+        total:
+          type: number
+        deliveryAddress:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - userName
+        - status
+        - total
+        - deliveryAddress
+        - notes
+        - items
+        - createdAt
+        - updatedAt
+
+    CreateOrderBody:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              foodItemId:
+                type: integer
+              quantity:
+                type: integer
+            required:
+              - foodItemId
+              - quantity
+        deliveryAddress:
+          type: string
+        notes:
+          type: string
+      required:
+        - items
+        - deliveryAddress
+
+    UpdateOrderStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, preparing, ready, delivered, cancelled]
+      required:
+        - status
+
+    WishlistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        foodItemId:
+          type: integer
+        foodItem:
+          $ref: "#/components/schemas/FoodItem"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - foodItemId
+        - foodItem
+        - createdAt
+
+    AddToWishlistBody:
+      type: object
+      properties:
+        foodItemId:
+          type: integer
+      required:
+        - foodItemId
+
+    Short:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        videoUrl:
+          type: string
+        thumbnailUrl:
+          type: ["string", "null"]
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        authorRole:
+          type: string
+        views:
+          type: integer
+        likes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - videoUrl
+        - thumbnailUrl
+        - authorId
+        - authorName
+        - authorRole
+        - views
+        - likes
+        - createdAt
+
+    CreateShortBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+      required:
+        - title
+        - videoUrl
+
+    CookingIdea:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        authorRole:
+          type: string
+        likesCount:
+          type: integer
+        reviewCount:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - content
+        - imageUrl
+        - authorId
+        - authorName
+        - authorRole
+        - likesCount
+        - reviewCount
+        - tags
+        - createdAt
+
+    CreateIdeaBody:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        imageUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - content
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        ideaId:
+          type: integer
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        comment:
+          type: string
+        rating:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - ideaId
+        - authorId
+        - authorName
+        - comment
+        - rating
+        - createdAt
+
+    CreateReviewBody:
+      type: object
+      properties:
+        comment:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+      required:
+        - comment
+        - rating
+
+    StatsOverview:
+      type: object
+      properties:
+        totalFoodItems:
+          type: integer
+        totalOrders:
+          type: integer
+        totalUsers:
+          type: integer
+        totalCafes:
+          type: integer
+        totalShorts:
+          type: integer
+        totalIdeas:
+          type: integer
+        popularCategories:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required:
+              - category
+              - count
+      required:
+        - totalFoodItems
+        - totalOrders
+        - totalUsers
+        - totalCafes
+        - totalShorts
+        - totalIdeas
+        - popularCategories
